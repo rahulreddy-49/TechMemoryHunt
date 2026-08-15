@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Tech Memory Hunt - IEEE Orientation Game</title>
+  <!-- SEO Tags -->
+  <meta name="description" content="A technology-themed location memory game for the IEEE college orientation stall. Challenge your memory and find the tech tools.">
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Global Mute Button -->
+    <button id="btn-mute" class="btn-mute" title="Toggle Sound" aria-label="Toggle Sound">
+      <svg id="mute-icon-unmuted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+        <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+      </svg>
+      <svg id="mute-icon-muted" class="hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+        <line x1="23" y1="9" x2="17" y2="15"></line>
+        <line x1="17" y1="9" x2="23" y2="15"></line>
+      </svg>
+    </button>
+
+    <!-- background grids & glow effects -->
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+    <div class="grid-overlay"></div>
+
+    <!-- HOME SCREEN -->
+    <section id="home-screen" class="screen active">
+        <div class="ieee-logo-wrapper">
+          <div class="ieee-accent-decor">
+            <span class="decor-line"></span>
+            <span class="ieee-tag">IEEE COMPUTER SOCIETY</span>
+            <span class="decor-line"></span>
+          </div>
+        </div>
+        <h1 class="game-title" id="main-title">TECH MEMORY HUNT</h1>
+        <p class="game-subtitle">"How good is your tech memory?"</p>
+      </div>
+
+      <!-- Preview Row -->
+      <div id="home-card-preview" class="home-card-preview">
+        <!-- Dynamically populated cards will be placed here -->
+      </div>
+
+      <div class="card-panel stats-panel-home">
+        <div class="best-score-badge">
+          <span class="label">BEST SCORE</span>
+          <span class="value" id="home-best-score">0</span>
+        </div>
+      </div>
+
+      <!-- Difficulty Selection -->
+      <div class="card-panel difficulty-panel">
+        <h2>SELECT DIFFICULTY</h2>
+        <div class="difficulty-options">
+          <button type="button" class="btn-difficulty" data-diff="easy">
+            <span class="diff-title">EASY</span>
+            <span class="diff-desc">5s Memo / 10s Guess</span>
+          </button>
+          <button type="button" class="btn-difficulty active" data-diff="normal">
+            <span class="diff-title">NORMAL</span>
+            <span class="diff-desc">4s Memo / 8s Guess</span>
+          </button>
+          <button type="button" class="btn-difficulty" data-diff="hard">
+            <span class="diff-title">HARD</span>
+            <span class="diff-desc">3s Memo / 6s Guess</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="card-panel instructions-panel">
+        <h2>HOW TO PLAY</h2>
+        <ul>
+          <li>
+            <span class="step-num">1</span>
+            <span class="step-text">Memorize the images.</span>
+          </li>
+          <li>
+            <span class="step-num">2</span>
+            <span class="step-text">Remember their positions.</span>
+          </li>
+          <li>
+            <span class="step-num">3</span>
+            <span class="step-text">Find the requested technology.</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Leaderboard Panel on Home Screen -->
+      <div class="card-panel leaderboard-panel" id="home-leaderboard-container">
+        <h2>🏆 TOP SCORES</h2>
+        <div class="leaderboard-table-container">
+          <table class="leaderboard-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Player</th>
+                <th>Score</th>
+                <th>Diff</th>
+              </tr>
+            </thead>
+            <tbody id="home-leaderboard-body">
+              <!-- Dynamically populated top 5 scores -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <button id="btn-play" class="btn btn-primary btn-glow">
+        <span>PLAY GAME</span>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+        </svg>
+      </button>
+    </section>
+
+    <!-- GAME SCREEN -->
+    <section id="game-screen" class="screen hidden">
+      <!-- Top Status Bar -->
+      <header class="game-header">
+        <div class="round-tracker">
+          <span id="current-round-text" class="text-glow">ROUND 1 / 20</span>
+          <span id="category-tag" class="category-pill">Computer Basics</span>
+        </div>
+        <div class="score-board">
+          <div class="score-box">
+            <span class="label">SCORE</span>
+            <span id="game-score" class="value text-glow">0</span>
+          </div>
+          <div class="score-box streak-box" id="streak-box-container">
+            <span class="label">STREAK</span>
+            <span id="game-streak" class="value text-glow">🔥 0</span>
+          </div>
+          <div class="score-box">
+            <span class="label">BEST</span>
+            <span id="game-best" class="value">0</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Instruction/Banner -->
+      <div class="instruction-banner">
+        <div id="instruction-title" class="instruction-title">MEMORIZE THE PLACES</div>
+        <div id="instruction-prompt" class="instruction-prompt text-glow">5</div>
+        
+        <!-- Guess Timer Indicator -->
+        <div id="guess-timer-container" class="guess-timer-container hidden">
+          <span class="guess-timer-label">TIME</span>
+          <span id="guess-timer-val" class="guess-timer-val text-glow">8</span>
+        </div>
+
+        <div class="progress-bar-container" id="progress-container">
+          <div id="memorize-progress-bar" class="progress-bar"></div>
+          <div id="guess-progress-bar" class="progress-bar guess-bar hidden"></div>
+        </div>
+      </div>
+
+      <!-- 2 Columns x 4 Rows Card Grid -->
+      <main class="grid-container">
+        <div id="card-grid" class="cards-grid">
+          <!-- Dynamically populated cards will be placed here -->
+        </div>
+      </main>
+
+      <!-- Feedback Banner Overlay -->
+      <div id="feedback-overlay" class="feedback-overlay hidden">
+        <div class="feedback-content">
+          <div id="feedback-status" class="feedback-status text-glow">CORRECT!</div>
+          <div id="feedback-detail" class="feedback-detail">You found the Laptop</div>
+          <button id="btn-next" class="btn btn-secondary btn-small hidden">
+            <span>CONTINUE</span>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- RESULTS SCREEN -->
+    <section id="results-screen" class="screen hidden">
+      <div class="hero-container">
+        <div id="high-score-banner" class="high-score-banner hidden">NEW HIGH SCORE!</div>
+        <h1 class="results-title">GAME COMPLETE!</h1>
+        <p class="results-subtitle">ORIENTATION STALL REPORT</p>
+      </div>
+
+      <div class="results-summary">
+        <div class="result-card score-result">
+          <span class="label">TOTAL SCORE</span>
+          <span id="result-score" class="value text-glow">0</span>
+        </div>
+
+        <div class="results-grid">
+          <div class="result-card">
+            <span class="label">ACCURACY</span>
+            <span id="result-accuracy" class="value-small text-glow">0%</span>
+          </div>
+          <div class="result-card">
+            <span class="label">CORRECT</span>
+            <span id="result-correct" class="value-small text-glow">0 / 20</span>
+          </div>
+          <div class="result-card">
+            <span class="label">BEST STREAK</span>
+            <span id="result-streak" class="value-small text-glow">0</span>
+          </div>
+          <div class="result-card result-best-score-box">
+            <span class="label">BEST SCORE</span>
+            <span id="result-best" class="value-small">0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Leaderboard Name Input (Only shown if qualifies for top 5) -->
+      <div id="leaderboard-input-container" class="card-panel input-panel hidden">
+        <h2>🏆 NEW TOP SCORE!</h2>
+        <p>Enter your name for the local leaderboard:</p>
+        <div class="input-row">
+          <input type="text" id="player-name-input" maxlength="10" placeholder="YOUR NAME" autocomplete="off" />
+          <button id="btn-submit-score" class="btn btn-primary btn-small">SUBMIT</button>
+        </div>
+      </div>
+
+      <!-- Leaderboard Table -->
+      <div class="card-panel leaderboard-panel" id="results-leaderboard-container">
+        <h2>🏆 LEADERBOARD</h2>
+        <div class="leaderboard-table-container">
+          <table class="leaderboard-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Player</th>
+                <th>Score</th>
+                <th>Diff</th>
+              </tr>
+            </thead>
+            <tbody id="results-leaderboard-body">
+              <!-- Dynamically populated top 5 scores -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Play buttons -->
+      <div class="results-actions">
+        <button id="btn-play-again" class="btn btn-primary btn-glow">
+          <span>PLAY AGAIN</span>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+          </svg>
+        </button>
+        <button id="btn-home" class="btn btn-secondary">
+          <span>HOME</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ROUND INTRO OVERLAY -->
+    <div id="round-intro-overlay" class="round-intro-overlay hidden">
+      <div class="round-intro-content">
+        <span class="round-intro-badge">GET READY</span>
+        <h1 id="intro-round-title" class="text-glow">ROUND 1</h1>
+        <p id="intro-category-title">COMPUTER BASICS</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audio elements for sound feedback (Optional but standard for premium stalls) -->
+  <audio id="sound-tick" src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==&quot;"></audio>
+  <audio id="sound-success" src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==&quot;"></audio>
+  <audio id="sound-fail" src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==&quot;"></audio>
+
+  <!-- Game Scripts -->
+  <script src="js/assets.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
