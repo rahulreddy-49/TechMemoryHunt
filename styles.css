@@ -57,13 +57,16 @@ body {
 
 #app {
   position: relative;
-  width: 100%;
-  height: 100%;
-  max-width: 480px; /* Standard portrait focus */
-  background: #090c16;
-  border-left: 1px solid rgba(255, 255, 255, 0.05);
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 0 0 100px rgba(0, 0, 0, 0.9);
+  width: 92%;
+  max-width: 430px;
+  height: 88vh;
+  max-height: 780px;
+  background: rgba(9, 12, 22, 0.45);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 28px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -687,6 +690,8 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.06);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
   transform: rotateY(0deg);
+  padding: 0 !important;
+  overflow: hidden;
 }
 
 .card-front svg {
@@ -1351,3 +1356,577 @@ body {
 .results-actions .btn-primary {
   flex: 0.55;
 }
+
+/* ==========================================================================
+   STALL UPGRADES & AESTHETIC POLISH
+   ========================================================================== */
+
+/* Confetti Canvas for High Score Celebration */
+.confetti-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/* Floating points popups (+100 / +120 / +150 / +180) */
+.floating-points {
+  position: absolute;
+  font-family: var(--font-title);
+  font-weight: 800;
+  font-size: 1.3rem;
+  color: var(--amber);
+  text-shadow: 0 0 10px var(--amber-glow);
+  pointer-events: none;
+  z-index: 1001;
+  animation: float-up-fade 0.9s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes float-up-fade {
+  0% {
+    transform: translate(-50%, 0) scale(0.6);
+    opacity: 0;
+  }
+  20% {
+    transform: translate(-50%, -20px) scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -65px) scale(1);
+    opacity: 0;
+  }
+}
+
+/* Urgent Timer warning styles */
+.guess-timer-val.urgent {
+  color: var(--rose) !important;
+  text-shadow: 0 0 15px var(--rose-glow), 0 0 30px var(--rose);
+  animation: urgent-pulse 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes urgent-pulse {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1.22);
+  }
+}
+
+.progress-bar.guess-bar.urgent {
+  background: linear-gradient(to right, var(--rose), #ff0055) !important;
+  box-shadow: 0 0 12px var(--rose), 0 0 20px rgba(244, 63, 94, 0.6);
+}
+
+/* Tactile Keyboard Helper Indicators */
+.card-face.card-back::after {
+  content: "Key " attr(data-key);
+  position: absolute;
+  bottom: 8px;
+  font-size: 0.55rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.15);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Ultra-Short Viewport Responsiveness (e.g. 360x640) */
+@media (max-height: 680px) {
+  .screen {
+    padding: 12px 14px;
+  }
+  .game-title {
+    font-size: 1.6rem;
+    margin-bottom: 4px;
+  }
+  .game-subtitle {
+    font-size: 0.75rem;
+    margin-bottom: 10px;
+  }
+  .stats-panel-home {
+    padding: 8px 12px;
+    margin-bottom: 8px;
+  }
+  .difficulty-panel {
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+  .difficulty-panel h2 {
+    font-size: 0.85rem;
+    margin-bottom: 6px;
+  }
+  .btn-difficulty {
+    padding: 6px 2px;
+  }
+  .btn-difficulty .diff-title {
+    font-size: 0.8rem;
+  }
+  .btn-difficulty .diff-desc {
+    font-size: 0.55rem;
+  }
+  .instructions-panel {
+    padding: 8px 12px;
+    margin-bottom: 10px;
+  }
+  .instructions-panel h2 {
+    font-size: 0.85rem;
+    margin-bottom: 6px;
+  }
+  .instructions-panel ul {
+    gap: 4px;
+  }
+  .step-num {
+    width: 20px;
+    height: 20px;
+    font-size: 0.75rem;
+  }
+  .step-text {
+    font-size: 0.78rem;
+  }
+  .leaderboard-panel {
+    padding: 8px 12px;
+    margin-bottom: 10px;
+  }
+  .leaderboard-panel h2 {
+    font-size: 0.85rem;
+    margin-bottom: 6px;
+  }
+  .leaderboard-table th, .leaderboard-table td {
+    padding: 6px 10px;
+    font-size: 0.78rem;
+  }
+  .rank-col {
+    width: 35px;
+  }
+  .btn {
+    padding: 10px 20px;
+    font-size: 0.95rem;
+  }
+  
+  /* Game screen adjustments */
+  .game-header {
+    height: 36px;
+    margin-bottom: 4px;
+  }
+  #current-round-text {
+    font-size: 0.95rem;
+  }
+  .category-pill {
+    font-size: 0.6rem;
+    padding: 1px 4px;
+  }
+  .score-box {
+    padding: 2px 6px;
+    min-width: 48px;
+  }
+  .score-box .value {
+    font-size: 0.9rem;
+  }
+  .instruction-banner {
+    min-height: 52px;
+    padding: 4px 8px;
+    margin-bottom: 6px;
+  }
+  .instruction-title {
+    font-size: 0.65rem;
+  }
+  .instruction-prompt {
+    font-size: 1rem;
+  }
+  .instruction-prompt.target-highlight {
+    font-size: 1.1rem;
+  }
+  .guess-timer-val {
+    font-size: 1.7rem;
+  }
+  
+  .cards-grid {
+    gap: 6px;
+    max-height: calc(100vh - 130px);
+  }
+  .card-face {
+    border-radius: 10px;
+    padding: 6px;
+  }
+  .card-back {
+    font-size: 1.5rem;
+  }
+  .card-face.card-back::after {
+    bottom: 4px;
+    font-size: 0.45rem;
+  }
+  
+  /* Results screen adjustments */
+  .hero-container {
+    margin-top: 5px;
+    margin-bottom: 6px;
+  }
+  .results-title {
+    font-size: 1.8rem;
+  }
+  .results-summary {
+    margin-bottom: 8px;
+    gap: 6px;
+  }
+  .score-result {
+    padding: 10px;
+  }
+  .result-card .value {
+    font-size: 1.8rem;
+  }
+  .results-grid {
+    gap: 8px;
+  }
+  .result-card {
+    padding: 8px;
+    border-radius: 12px;
+  }
+  .result-card .value-small {
+    font-size: 1.3rem;
+  }
+  .input-panel {
+    padding: 8px 12px;
+    margin-bottom: 6px;
+  }
+  .input-panel h2 {
+    font-size: 0.95rem;
+    margin-bottom: 4px;
+  }
+  .input-panel p {
+    font-size: 0.75rem;
+    margin-bottom: 6px;
+  }
+  #player-name-input {
+    padding: 6px 10px;
+    font-size: 0.85rem;
+  }
+  .btn-small {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
+}
+
+
+
+/* Center Panel container style matching Wingrush pilot panel */
+.home-panel-container {
+  width: 100%;
+  height: 100%;
+  padding: 32px 24px 24px 24px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+
+/* Logo */
+.game-logo-container {
+  text-align: center;
+  margin-bottom: 24px;
+}
+.logo-title {
+  font-family: 'Rajdhani', 'Montserrat', sans-serif;
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #ffffff;
+  margin: 0 0 4px 0;
+  text-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+}
+.logo-accent {
+  background: linear-gradient(to right, #ec4899, #06b6d4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-left: 2px;
+  filter: drop-shadow(0 0 8px rgba(6, 182, 212, 0.4));
+}
+.logo-subtitle {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+/* Active Player Input Card */
+.pilot-input-card {
+  width: 100%;
+  background: rgba(8, 12, 24, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 8px 12px 8px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  box-sizing: border-box;
+}
+.pilot-input-inner {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+.pilot-input-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+  margin-bottom: 2px;
+}
+.pilot-input-field {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  color: #ec4899 !important; /* Wingrush neon pilot name color */
+  font-size: 1.15rem !important;
+  font-weight: 700 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 100%;
+  letter-spacing: 0.5px;
+  text-shadow: 0 0 10px rgba(236, 72, 153, 0.3);
+}
+.pilot-input-field::placeholder {
+  color: rgba(236, 72, 153, 0.4) !important;
+}
+.pilot-input-icon {
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.6);
+  flex-shrink: 0;
+}
+
+/* Pilot stats card grid */
+.pilot-stats-row {
+  width: 100%;
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.pilot-stat-card {
+  flex: 1;
+  background: rgba(8, 12, 24, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+}
+.stat-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+.stat-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #06b6d4; /* Cyan stats value */
+}
+.text-glow-cyan {
+  text-shadow: 0 0 8px rgba(6, 182, 212, 0.6);
+}
+
+/* Play and Mute Actions Row */
+.pilot-actions-row {
+  width: 100%;
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.btn-play-pill {
+  flex-grow: 1;
+  background: linear-gradient(135deg, #00d2ff 0%, #0066ff 100%);
+  border: none;
+  border-radius: 50px;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  padding: 12px 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 15px rgba(0, 210, 255, 0.35);
+}
+.btn-play-pill:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 210, 255, 0.55);
+}
+.btn-play-pill:active {
+  transform: translateY(0);
+}
+.btn-mute-home-icon {
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+.btn-mute-home-icon:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* bottom keyboard guide prompts */
+.pilot-guides {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+}
+.guide-badge {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  padding: 1px 4px;
+  color: #ffffff;
+  font-family: monospace;
+}
+.guide-action {
+  color: #ec4899;
+  font-weight: 700;
+}
+
+/* Modal Overlay Styles for Player Registry */
+.modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(5, 7, 18, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+}
+
+.registry-panel {
+  width: 90%;
+  max-width: 360px;
+  background: rgba(13, 17, 34, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.registry-title {
+  font-family: 'Rajdhani', 'Montserrat', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 4px;
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
+}
+
+.active-players-list {
+  width: 100%;
+  max-height: 160px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-right: 4px;
+  box-sizing: border-box;
+}
+
+/* Custom Scrollbar for active players list */
+.active-players-list::-webkit-scrollbar {
+  width: 4px;
+}
+.active-players-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+.active-players-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+.player-list-item {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+.player-list-item:hover {
+  background: rgba(6, 182, 212, 0.04);
+  border-color: rgba(6, 182, 212, 0.3);
+}
+.player-list-item.active {
+  background: rgba(6, 182, 212, 0.08);
+  border-color: #06b6d4;
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.15);
+}
+.player-list-item .player-name {
+  font-weight: 700;
+  color: #ffffff;
+  font-size: 0.95rem;
+}
+.player-list-item .player-best {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #06b6d4;
+  text-shadow: 0 0 6px rgba(6, 182, 212, 0.4);
+}
+
+.btn-close-modal {
+  width: 100%;
+  background: linear-gradient(135deg, #f97316 0%, #ef4444 100%);
+  border: none;
+  border-radius: 50px;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+}
+.btn-close-modal:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.55);
+}
+.btn-close-modal:active {
+  transform: translateY(0);
+}
+

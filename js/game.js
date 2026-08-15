@@ -1,17 +1,19 @@
 /**
- * Tech Memory Hunt - Game Controller
- * Core logic, state management, timer loops, and events
+ * Restructured Memory Game - Game Controller
+ * Supports 3 rounds: Emotions, Animals, and Modes of Transport
  */
 
-// Difficulty configurations
+// Legacy configurations to prevent index.html references from breaking
 const DIFFICULTY_CONFIG = {
   easy: { memorize: 5, guess: 10 },
-  normal: { memorize: 4, guess: 8 },
-  hard: { memorize: 3, guess: 6 }
+  normal: { memorize: 5, guess: 10 },
+  hard: { memorize: 5, guess: 10 }
 };
 let chosenDifficulty = 'normal';
 
 // Game state variables
+let playerName = "PLAYER";
+let playerRegistry = []; // Multi-user player registry
 let currentRound = 1;
 let score = 0;
 let bestScore = 0;
@@ -23,7 +25,7 @@ let targetItem = null;
 let targetPosition = -1;
 let gameState = 'HOME'; // HOME, INTRO, MEMORIZE, GUESS, FEEDBACK, RESULTS
 let countdownValue = 5;
-let guessCountdownValue = 8;
+let guessCountdownValue = 10;
 
 // Audio Context and Synth for Offline Sound Effects
 let audioCtx = null;
@@ -36,7 +38,12 @@ let feedbackTimeout = null;
 let introTimeout = null;
 let isInteractionLocked = false;
 let correctAnswersCount = 0;
-let lastInsertedId = null; // To highlight player's score on leaderboard
+let lastInsertedId = null;
+
+// Confetti State variables
+let confettiActive = false;
+const confettiColors = ['#06b6d4', '#8b5cf6', '#10b981', '#f43f5e', '#f59e0b'];
+let confettiParticles = [];
 
 // DOM Elements
 const homeScreen = document.getElementById('home-screen');
@@ -60,24 +67,14 @@ const cardGrid = document.getElementById('card-grid');
 
 const memorizeProgressBar = document.getElementById('memorize-progress-bar');
 const guessProgressBar = document.getElementById('guess-progress-bar');
-const homeCardPreview = document.getElementById('home-card-preview');
 
 const feedbackOverlay = document.getElementById('feedback-overlay');
 const feedbackStatus = document.getElementById('feedback-status');
 const feedbackDetail = document.getElementById('feedback-detail');
 
-const leaderboardInputContainer = document.getElementById('leaderboard-input-container');
-const playerNameInput = document.getElementById('player-name-input');
-const btnSubmitScore = document.getElementById('btn-submit-score');
-const homeLeaderboardBody = document.getElementById('home-leaderboard-body');
-const resultsLeaderboardBody = document.getElementById('results-leaderboard-body');
-
-const highScoreBanner = document.getElementById('high-score-banner');
 const resultScore = document.getElementById('result-score');
 const resultAccuracy = document.getElementById('result-accuracy');
 const resultCorrect = document.getElementById('result-correct');
-const resultStreak = document.getElementById('result-streak');
-const resultBest = document.getElementById('result-best');
 
 const btnPlay = document.getElementById('btn-play');
 const btnNext = document.getElementById('btn-next');
@@ -87,69 +84,200 @@ const btnMute = document.getElementById('btn-mute');
 const muteIconUnmuted = document.getElementById('mute-icon-unmuted');
 const muteIconMuted = document.getElementById('mute-icon-muted');
 
+const roundControls = document.getElementById('round-controls');
+const btnShuffleRound = document.getElementById('btn-shuffle-round');
+const btnStartRound = document.getElementById('btn-start-round');
+
 // Initialize Game
 function init() {
-  // Clear any persistent timers
   clearAllTimers();
 
-  // Load best score
-  bestScore = parseInt(localStorage.getItem('tech_memory_hunt_best') || '0', 10);
-  homeBestScore.textContent = bestScore;
-  gameBest.textContent = bestScore;
-  resultBest.textContent = bestScore;
+  // Load player registry from local storage
+  playerRegistry = JSON.parse(localStorage.getItem('memory_hunt_players') || '[]');
+  if (playerRegistry.length === 0) {
+    playerRegistry.push({ name: "PLAYER", best: 0 });
+    localStorage.setItem('memory_hunt_players', JSON.stringify(playerRegistry));
+  }
+  
+  // Set default active player
+  const defaultPlayer = playerRegistry[0];
+  playerName = defaultPlayer.name;
+  bestScore = defaultPlayer.best;
+
+  // Initialize UI text values
+  const nameInput = document.getElementById('player-name-input');
+  if (nameInput) nameInput.value = playerName;
+  if (homeBestScore) homeBestScore.textContent = bestScore;
+  if (gameBest) gameBest.textContent = bestScore;
 
   // Load mute state
   isMuted = localStorage.getItem('tech_memory_hunt_muted') === 'true';
   updateMuteIcon();
 
-  // Load Home Screen Previews
-  loadHomeScreenPreviews();
+  // Hide global mute icon on home screen
+  if (btnMute) btnMute.classList.add('hidden');
 
-  // Render Leaderboards
-  renderLeaderboards();
-
-  // Event Listeners for difficulty buttons
-  const diffButtons = document.querySelectorAll('.btn-difficulty');
-  diffButtons.forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      playSound('click');
-      diffButtons.forEach(b => b.classList.remove('active'));
-      const activeBtn = e.currentTarget;
-      activeBtn.classList.add('active');
-      chosenDifficulty = activeBtn.dataset.diff;
-    });
+  // Play Button Click
+  btnPlay.addEventListener('click', () => {
+    playSound('click');
+    const nameInput = document.getElementById('player-name-input');
+    const name = nameInput.value.trim().toUpperCase();
+    if (!name) {
+      nameInput.focus();
+      const inputCard = document.querySelector('.pilot-input-card');
+      if (inputCard) {
+        inputCard.style.borderColor = 'var(--rose)';
+        inputCard.classList.add('shake');
+        setTimeout(() => { inputCard.classList.remove('shake'); }, 450);
+      }
+      return;
+    }
+    const inputCard = document.querySelector('.pilot-input-card');
+    if (inputCard) inputCard.style.borderColor = 'rgba(255,255,255,0.06)';
+    
+    // Check if player name exists in registry, otherwise add
+    let playerObj = playerRegistry.find(p => p.name === name);
+    if (!playerObj) {
+      playerObj = { name: name, best: 0 };
+      playerRegistry.push(playerObj);
+      localStorage.setItem('memory_hunt_players', JSON.stringify(playerRegistry));
+    }
+    
+    playerName = playerObj.name;
+    bestScore = playerObj.best;
+    
+    if (homeBestScore) homeBestScore.textContent = bestScore;
+    if (gameBest) gameBest.textContent = bestScore;
+    
+    startGame();
   });
 
-  // Buttons Bindings
-  btnPlay.addEventListener('click', () => { playSound('click'); startGame(); });
   btnNext.addEventListener('click', () => { playSound('click'); skipFeedbackDelay(); });
   btnPlayAgain.addEventListener('click', () => { playSound('click'); startGame(); });
   btnHome.addEventListener('click', () => { playSound('click'); resetToHome(); });
   btnMute.addEventListener('click', toggleMute);
-  btnSubmitScore.addEventListener('click', submitLeaderboardScore);
+
+  // Keypress validation inside main name input
+  if (nameInput) {
+    nameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        btnPlay.click();
+      }
+    });
+  }
+
+  // Home Page sound toggle button
+  const btnMuteHome = document.getElementById('btn-mute-home');
+  if (btnMuteHome) {
+    btnMuteHome.addEventListener('click', toggleMute);
+  }
+
+  // PLAYER REGISTRY MODAL CONTROLLERS & BINDINGS
+  const registryModal = document.getElementById('registry-modal');
+  const registryNameInput = document.getElementById('registry-name-input');
+  const btnRegisterPlayer = document.getElementById('btn-register-player');
+  const btnCloseRegistry = document.getElementById('btn-close-registry');
+  const pilotAvatarBtn = document.querySelector('.pilot-input-icon');
+
+  // Open registry
+  if (pilotAvatarBtn && registryModal) {
+    pilotAvatarBtn.addEventListener('click', () => {
+      playSound('click');
+      registryModal.classList.remove('hidden');
+      renderPlayerRegistryList();
+    });
+  }
+
+  // Close registry
+  if (btnCloseRegistry && registryModal) {
+    btnCloseRegistry.addEventListener('click', () => {
+      playSound('click');
+      registryModal.classList.add('hidden');
+    });
+  }
+
+  // Close registry on outer click
+  if (registryModal) {
+    registryModal.addEventListener('click', (e) => {
+      if (e.target === registryModal) {
+        playSound('click');
+        registryModal.classList.add('hidden');
+      }
+    });
+  }
+
+  // Register action
+  if (btnRegisterPlayer && registryNameInput) {
+    btnRegisterPlayer.addEventListener('click', () => {
+      playSound('click');
+      const newName = registryNameInput.value.trim().toUpperCase();
+      if (!newName) {
+        registryNameInput.focus();
+        const registryCard = registryNameInput.closest('.pilot-input-card');
+        if (registryCard) {
+          registryCard.style.borderColor = 'var(--rose)';
+          registryCard.classList.add('shake');
+          setTimeout(() => { registryCard.classList.remove('shake'); }, 450);
+        }
+        return;
+      }
+
+      const registryCard = registryNameInput.closest('.pilot-input-card');
+      if (registryCard) registryCard.style.borderColor = 'rgba(255,255,255,0.06)';
+
+      let playerObj = playerRegistry.find(p => p.name === newName);
+      if (!playerObj) {
+        playerObj = { name: newName, best: 0 };
+        playerRegistry.push(playerObj);
+        localStorage.setItem('memory_hunt_players', JSON.stringify(playerRegistry));
+      }
+
+      playerName = playerObj.name;
+      bestScore = playerObj.best;
+
+      // Sync active player details
+      const nameInput = document.getElementById('player-name-input');
+      if (nameInput) nameInput.value = playerName;
+      if (homeBestScore) homeBestScore.textContent = bestScore;
+      if (gameBest) gameBest.textContent = bestScore;
+
+      registryNameInput.value = '';
+      renderPlayerRegistryList();
+
+      setTimeout(() => {
+        registryModal.classList.add('hidden');
+      }, 250);
+    });
+
+    registryNameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        btnRegisterPlayer.click();
+      }
+    });
+  }
+
+  btnShuffleRound.addEventListener('click', () => {
+    playSound('click');
+    shuffledItems = fisherYatesShuffle(currentSet.items);
+    const targetIndex = Math.floor(Math.random() * 8);
+    targetItem = shuffledItems[targetIndex];
+    targetPosition = targetIndex;
+    renderGrid();
+  });
+
+  btnStartRound.addEventListener('click', () => {
+    playSound('click');
+    roundControls.classList.add('hidden');
+    beginMemorizationPhase();
+  });
 
   // Audio initializer on interaction
   document.body.addEventListener('click', initAudioContext, { once: true });
-}
 
-// Populate Home Screen Preview Row with 4 representative SVGs
-function loadHomeScreenPreviews() {
-  if (!homeCardPreview) return;
-  homeCardPreview.innerHTML = '';
-  
-  const previewItems = [
-    { name: "Laptop", set: 1 },
-    { name: "Smartphone", set: 2 },
-    { name: "AI Robot", set: 5 },
-    { name: "Padlock", set: 8 }
-  ];
-  
-  previewItems.forEach(item => {
-    const card = document.createElement('div');
-    card.className = 'home-preview-card';
-    card.innerHTML = getTechIconSvg(item.name, item.set);
-    homeCardPreview.appendChild(card);
-  });
+  // Keyboard accessibility binds
+  window.addEventListener('keydown', handleKeyDown);
 }
 
 // Web Audio API sound generator
@@ -261,12 +389,19 @@ function toggleMute() {
 
 // Update Mute Toggle SVGs
 function updateMuteIcon() {
+  const homeUnmuted = document.getElementById('mute-icon-home-unmuted');
+  const homeMuted = document.getElementById('mute-icon-home-muted');
+
   if (isMuted) {
     muteIconUnmuted.classList.add('hidden');
     muteIconMuted.classList.remove('hidden');
+    if (homeUnmuted) homeUnmuted.classList.add('hidden');
+    if (homeMuted) homeMuted.classList.remove('hidden');
   } else {
     muteIconUnmuted.classList.remove('hidden');
     muteIconMuted.classList.add('hidden');
+    if (homeUnmuted) homeUnmuted.classList.remove('hidden');
+    if (homeMuted) homeMuted.classList.add('hidden');
   }
 }
 
@@ -280,9 +415,113 @@ function fisherYatesShuffle(array) {
   return result;
 }
 
+// Canvas Confetti Celebration for High Scores
+function startConfetti() {
+  const canvas = document.getElementById('confetti-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  confettiActive = true;
+  confettiParticles = [];
+  
+  const resizeCanvas = () => {
+    canvas.width = canvas.parentElement.clientWidth;
+    canvas.height = canvas.parentElement.clientHeight;
+  };
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+  
+  for (let i = 0; i < 80; i++) {
+    confettiParticles.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height - canvas.height,
+      r: Math.random() * 6 + 4,
+      d: Math.random() * canvas.height,
+      color: confettiColors[Math.floor(Math.random() * confettiColors.length)],
+      tilt: Math.random() * 10 - 5,
+      tiltAngleIncremental: Math.random() * 0.07 + 0.02,
+      tiltAngle: 0,
+      speed: Math.random() * 3 + 2
+    });
+  }
+  
+  function drawConfetti() {
+    if (!confettiActive) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    let remaining = false;
+    confettiParticles.forEach(p => {
+      p.tiltAngle += p.tiltAngleIncremental;
+      p.y += p.speed;
+      p.tilt = Math.sin(p.tiltAngle - p.r / 2) * 5;
+      
+      if (p.y <= canvas.height) {
+        remaining = true;
+      }
+      
+      ctx.beginPath();
+      ctx.lineWidth = p.r;
+      ctx.strokeStyle = p.color;
+      ctx.moveTo(p.x + p.tilt + p.r / 2, p.y);
+      ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r / 2);
+      ctx.stroke();
+    });
+    
+    if (remaining) {
+      requestAnimationFrame(drawConfetti);
+    } else {
+      confettiActive = false;
+    }
+  }
+  
+  drawConfetti();
+}
+
+// Stop Confetti
+function stopConfetti() {
+  confettiActive = false;
+  const canvas = document.getElementById('confetti-canvas');
+  if (canvas) {
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+}
+
+// Accessibility keyboard controls (Keys 1-8 mapped to cards)
+function handleKeyDown(e) {
+  if (gameState !== 'GUESS' || isInteractionLocked) return;
+  const key = e.key;
+  if (key >= '1' && key <= '8') {
+    const cardIndex = parseInt(key, 10) - 1;
+    handleCardClick(cardIndex);
+  }
+}
+
+// Trigger floating points (+Points) popup on correct guess
+function triggerFloatingPoints(text, targetElement) {
+  const rect = targetElement.getBoundingClientRect();
+  const parentRect = targetElement.offsetParent.getBoundingClientRect();
+  
+  const popup = document.createElement('div');
+  popup.className = 'floating-points';
+  popup.textContent = text;
+  
+  const left = rect.left - parentRect.left + rect.width / 2;
+  const top = rect.top - parentRect.top + rect.height / 2;
+  
+  popup.style.left = `${left}px`;
+  popup.style.top = `${top}px`;
+  
+  targetElement.offsetParent.appendChild(popup);
+  
+  setTimeout(() => {
+    popup.remove();
+  }, 950);
+}
+
 // Start Game
 function startGame() {
   clearAllTimers();
+  stopConfetti();
   
   score = 0;
   currentRound = 1;
@@ -293,6 +532,9 @@ function startGame() {
 
   gameScore.textContent = '0';
   gameStreak.textContent = '🔥 0';
+  
+  // Show global mute button during play
+  if (btnMute) btnMute.classList.remove('hidden');
   
   // Hide screens
   homeScreen.classList.add('hidden');
@@ -330,9 +572,16 @@ function startRound(roundNum) {
   feedbackOverlay.classList.add('hidden');
   btnNext.classList.add('hidden');
   guessTimerContainer.classList.add('hidden');
+  
+  instructionTitle.textContent = 'READY?';
+  instructionPrompt.textContent = 'Click START to begin memorizing.';
   instructionPrompt.classList.remove('hidden');
   
-  // Prepare Grid Elements
+  // Hide progress bars initially
+  memorizeProgressBar.classList.add('hidden');
+  guessProgressBar.classList.add('hidden');
+  
+  // Prepare Grid Elements face-up
   renderGrid();
 
   // Show cinematic overlay
@@ -343,24 +592,33 @@ function startRound(roundNum) {
   
   introTimeout = setTimeout(() => {
     roundIntroOverlay.classList.add('hidden');
-    beginMemorizationPhase();
-  }, 1800);
+    
+    // Set round info headers on HUD
+    currentRoundText.textContent = `ROUND ${currentRound} / 5`;
+    categoryTag.textContent = currentSet.category;
+    
+    // Show start and shuffle controls banner
+    roundControls.classList.remove('hidden');
+  }, 1200); // Snappy round intro overlay timing
 }
 
-// Begin Memorization Phase
+// Begin Memorization Phase (Flips cards face-up to show images)
 function beginMemorizationPhase() {
   gameState = 'MEMORIZE';
   isInteractionLocked = false;
   
-  // Set HUD Headers
-  currentRoundText.textContent = `ROUND ${currentRound} / 20`;
-  categoryTag.textContent = currentSet.category;
+  // Make sure controls are hidden
+  roundControls.classList.add('hidden');
+  
+  // Flip cards face-up to reveal images
+  const cardContainers = document.querySelectorAll('.card-container');
+  cardContainers.forEach(card => card.classList.remove('flipped'));
   
   // Start countdown
   startMemorizeCountdown();
 }
 
-// Render Card Grid Elements
+// Render Card Grid Elements (Flipped face-down by default)
 function renderGrid() {
   cardGrid.innerHTML = '';
   // Lock click grid while memorizing
@@ -368,16 +626,16 @@ function renderGrid() {
   
   shuffledItems.forEach((itemName, index) => {
     const cardContainer = document.createElement('div');
-    cardContainer.className = 'card-container';
+    cardContainer.className = 'card-container flipped'; // Flipped face-down initially
     cardContainer.dataset.index = index;
     
-    // Front face (Tech Image) and Back face (Number Card)
+    // Front face (Tech Image) and Back face (Number Card) with Keyboard key indicator
     cardContainer.innerHTML = `
       <div class="card-inner">
         <div class="card-face card-front">
           ${getTechIconSvg(itemName, currentRound)}
         </div>
-        <div class="card-face card-back">
+        <div class="card-face card-back" data-key="${index + 1}">
           ${index + 1}
         </div>
       </div>
@@ -390,8 +648,7 @@ function renderGrid() {
 
 // Memorization Countdown with Progress Bar matching Difficulty settings
 function startMemorizeCountdown() {
-  const config = DIFFICULTY_CONFIG[chosenDifficulty];
-  countdownValue = config.memorize;
+  countdownValue = 5; // Always 5 seconds memorization
   
   instructionTitle.textContent = 'MEMORIZE THE PLACES';
   instructionPrompt.textContent = countdownValue;
@@ -406,8 +663,8 @@ function startMemorizeCountdown() {
   // Force browser reflow to load styles
   void memorizeProgressBar.offsetWidth;
   
-  // Transition smoothly to 0% over configured seconds
-  memorizeProgressBar.style.transition = `width ${config.memorize}s linear`;
+  // Transition smoothly to 0% over 5 seconds
+  memorizeProgressBar.style.transition = `width 5s linear`;
   memorizeProgressBar.style.width = '0%';
   
   triggerTickAnimation();
@@ -454,13 +711,14 @@ function transitionToGuessPhase() {
   guessTimerContainer.classList.remove('hidden');
   
   instructionTitle.textContent = 'WHERE IS';
-  guessTimerVal.textContent = DIFFICULTY_CONFIG[chosenDifficulty].guess;
+  guessTimerVal.textContent = 10; // 10 seconds to guess
   
-  // Set question target
+  // Set question target (capitalize properly for visual appeal)
+  const displayName = targetItem.toUpperCase();
   const guessTitle = document.createElement('span');
   guessTitle.id = 'guess-title-target';
   guessTitle.className = 'instruction-prompt text-glow target-highlight';
-  guessTitle.textContent = `${targetItem.toUpperCase()}?`;
+  guessTitle.textContent = `${displayName}?`;
   
   // Append target name safely
   const existingTarget = document.getElementById('guess-title-target');
@@ -471,10 +729,9 @@ function transitionToGuessPhase() {
   startGuessCountdown();
 }
 
-// Guess Countdown Interval Loop
+// Guess Countdown Interval Loop with Visual Urgency Indicators
 function startGuessCountdown() {
-  const config = DIFFICULTY_CONFIG[chosenDifficulty];
-  guessCountdownValue = config.guess;
+  guessCountdownValue = 10; // 10 seconds to guess
   
   // Setup Guess Progress Bar width
   memorizeProgressBar.classList.add('hidden');
@@ -482,10 +739,14 @@ function startGuessCountdown() {
   guessProgressBar.style.transition = 'none';
   guessProgressBar.style.width = '100%';
   
+  // Clear any existing urgent warning styles
+  guessProgressBar.classList.remove('urgent');
+  guessTimerVal.classList.remove('urgent');
+  
   void guessProgressBar.offsetWidth;
   
-  // Sync width to 0% over configured guessing duration
-  guessProgressBar.style.transition = `width ${config.guess}s linear`;
+  // Sync width to 0% over 10 seconds
+  guessProgressBar.style.transition = `width 10s linear`;
   guessProgressBar.style.width = '0%';
   
   if (guessInterval) clearInterval(guessInterval);
@@ -494,10 +755,17 @@ function startGuessCountdown() {
     guessCountdownValue--;
     if (guessCountdownValue > 0) {
       guessTimerVal.textContent = guessCountdownValue;
-      if (guessCountdownValue <= 2) {
+      
+      // Warn when remaining time is 3s or less
+      if (guessCountdownValue <= 3) {
+        guessProgressBar.classList.add('urgent');
+        guessTimerVal.classList.add('urgent');
         playSound('tick'); // faster alarm ticker
       }
     } else {
+      guessTimerVal.textContent = "0";
+      guessProgressBar.classList.remove('urgent');
+      guessTimerVal.classList.remove('urgent');
       clearInterval(guessInterval);
       handleTimeout();
     }
@@ -507,6 +775,12 @@ function startGuessCountdown() {
 // Handles Game Screen Timed Out
 function handleTimeout() {
   if (gameState !== 'GUESS' || isInteractionLocked) return;
+  
+  // Stop guess countdown immediately and freeze progress bar
+  if (guessInterval) clearInterval(guessInterval);
+  const computedWidth = window.getComputedStyle(guessProgressBar).width;
+  guessProgressBar.style.transition = 'none';
+  guessProgressBar.style.width = computedWidth;
   
   isInteractionLocked = true;
   gameState = 'FEEDBACK';
@@ -534,18 +808,20 @@ function handleTimeout() {
   feedbackOverlay.classList.remove('hidden');
   btnNext.classList.remove('hidden');
   
-  // Auto advance after 2.6 seconds
+  // Auto advance after 1.5 seconds (Snappy round transition)
   if (feedbackTimeout) clearTimeout(feedbackTimeout);
-  feedbackTimeout = setTimeout(advanceToNextStep, 2600);
+  feedbackTimeout = setTimeout(advanceToNextStep, 1500);
 }
 
 // Handle Card Click Guesses
 function handleCardClick(clickedIndex) {
   if (gameState !== 'GUESS' || isInteractionLocked) return;
   
-  // Stop guess countdown immediately
+  // Stop guess countdown immediately and freeze progress bar visually
   if (guessInterval) clearInterval(guessInterval);
-  guessProgressBar.style.transition = 'none'; // pause animation
+  const computedWidth = window.getComputedStyle(guessProgressBar).width;
+  guessProgressBar.style.transition = 'none';
+  guessProgressBar.style.width = computedWidth;
   
   isInteractionLocked = true;
   gameState = 'FEEDBACK';
@@ -567,13 +843,7 @@ function handleCardClick(clickedIndex) {
     currentStreak++;
     bestStreak = Math.max(bestStreak, currentStreak);
     
-    // Streak Modifier Score Bump
-    let scoreAddition = 100;
-    if (currentStreak === 2) scoreAddition = 120;
-    else if (currentStreak === 3) scoreAddition = 150;
-    else if (currentStreak >= 4) scoreAddition = 180;
-    
-    score += scoreAddition;
+    score += 100; // Correct = 100 points
     correctAnswersCount++;
     
     gameScore.textContent = score;
@@ -581,6 +851,9 @@ function handleCardClick(clickedIndex) {
     
     // Highlight correct choice
     clickedCard.classList.add('correct');
+    
+    // Pop up float points (+100) on correct card
+    triggerFloatingPoints("+100", clickedCard);
     
     // Trigger streak badge scaling pop animation
     streakBoxContainer.classList.remove('streak-pop');
@@ -590,11 +863,11 @@ function handleCardClick(clickedIndex) {
     // Save Best score in real-time
     if (score > bestScore) {
       bestScore = score;
-      gameBest.textContent = bestScore;
+      if (gameBest) gameBest.textContent = bestScore;
       localStorage.setItem('tech_memory_hunt_best', bestScore);
     }
     
-    showFeedback(true, clickedIndex, scoreAddition);
+    showFeedback(true, clickedIndex, 100);
   } else {
     // Reset Streak
     currentStreak = 0;
@@ -623,8 +896,7 @@ function showFeedback(isCorrect, clickedIndex, pointsAwarded) {
   if (isCorrect) {
     feedbackOverlay.classList.add('correct-theme');
     
-    // Perfect / great memory badges
-    if (currentStreak >= 3) {
+    if (currentStreak >= 2) {
       feedbackStatus.textContent = '🔥 GREAT MEMORY!';
     } else {
       feedbackStatus.textContent = '✓ CORRECT!';
@@ -642,9 +914,9 @@ function showFeedback(isCorrect, clickedIndex, pointsAwarded) {
   feedbackOverlay.classList.remove('hidden');
   btnNext.classList.remove('hidden');
   
-  // Auto transition to next round after 2.6s
+  // Auto transition to next round after 1.5s (Snappy feedback overlay flow)
   if (feedbackTimeout) clearTimeout(feedbackTimeout);
-  feedbackTimeout = setTimeout(advanceToNextStep, 2600);
+  feedbackTimeout = setTimeout(advanceToNextStep, 1500);
 }
 
 // Skip Feedback Delay on manual click
@@ -661,7 +933,7 @@ function advanceToNextStep() {
   const targetHeader = document.getElementById('guess-title-target');
   if (targetHeader) targetHeader.remove();
   
-  if (currentRound < 20) {
+  if (currentRound < 5) { // 5 Rounds total
     startRound(currentRound + 1);
   } else {
     finishGame();
@@ -672,149 +944,64 @@ function advanceToNextStep() {
 function finishGame() {
   gameState = 'RESULTS';
   clearAllTimers();
+  stopConfetti();
+  
+  // Show global mute button during results
+  if (btnMute) btnMute.classList.remove('hidden');
   
   gameScreen.classList.add('hidden');
   resultsScreen.classList.remove('hidden');
   
   // Update scores HUD on results screen
+  document.getElementById('result-player-name').textContent = playerName.toUpperCase();
   resultScore.textContent = score;
-  resultCorrect.textContent = `${correctAnswersCount} / 20`;
-  resultStreak.textContent = bestStreak;
+  resultCorrect.textContent = `${correctAnswersCount} / 5`;
   
-  const accuracy = Math.round((correctAnswersCount / 20) * 100);
+  const accuracy = Math.round((correctAnswersCount / 5) * 100);
   resultAccuracy.textContent = `${accuracy}%`;
   
-  // Save global stats
-  const previousBest = parseInt(localStorage.getItem('tech_memory_hunt_best') || '0', 10);
-  let isNewRecord = false;
-  if (score > previousBest) {
+  // Update player score in registry
+  const playerObj = playerRegistry.find(p => p.name === playerName);
+  if (playerObj) {
+    if (score > playerObj.best) {
+      playerObj.best = score;
+      localStorage.setItem('memory_hunt_players', JSON.stringify(playerRegistry));
+      bestScore = score;
+      if (homeBestScore) homeBestScore.textContent = bestScore;
+      if (gameBest) gameBest.textContent = bestScore;
+    }
+  }
+
+  // Update global high score if needed
+  let globalBest = parseInt(localStorage.getItem('tech_memory_hunt_best') || '0', 10);
+  if (score > globalBest) {
     localStorage.setItem('tech_memory_hunt_best', score);
-    bestScore = score;
-    isNewRecord = true;
-    highScoreBanner.classList.remove('hidden');
+  }
+  
+  // Confetti celebration if they get a perfect score
+  if (score === 500) {
+    startConfetti();
     playSound('high_score');
-  } else {
-    highScoreBanner.classList.add('hidden');
-  }
-  
-  // Save best streak/accuracy records in localStorage
-  const prevBestStreak = parseInt(localStorage.getItem('tech_memory_hunt_best_streak') || '0', 10);
-  if (bestStreak > prevBestStreak) {
-    localStorage.setItem('tech_memory_hunt_best_streak', bestStreak);
-  }
-  const prevBestAcc = parseInt(localStorage.getItem('tech_memory_hunt_best_accuracy') || '0', 10);
-  if (accuracy > prevBestAcc) {
-    localStorage.setItem('tech_memory_hunt_best_accuracy', accuracy);
-  }
-  
-  resultBest.textContent = bestScore;
-  homeBestScore.textContent = bestScore;
-  
-  // Check if qualifies for offline leaderboard
-  if (qualifiesForLeaderboard(score)) {
-    leaderboardInputContainer.classList.remove('hidden');
-    playerNameInput.value = '';
-    playerNameInput.focus();
-  } else {
-    leaderboardInputContainer.classList.add('hidden');
-  }
-  
-  // Render Leaderboard Tables
-  renderLeaderboards();
-}
-
-// Local Leaderboard logic
-function getLeaderboard() {
-  try {
-    const board = localStorage.getItem('tech_memory_hunt_leaderboard');
-    if (!board) {
-      // Seed default scores for orientation stall competitiveness
-      const defaultBoard = [
-        { id: 1, name: "RAHUL", score: 3800, difficulty: "hard", date: new Date().toLocaleDateString() },
-        { id: 2, name: "ANANYA", score: 3500, difficulty: "normal", date: new Date().toLocaleDateString() },
-        { id: 3, name: "ARJUN", score: 3200, difficulty: "normal", date: new Date().toLocaleDateString() },
-        { id: 4, name: "SAI", score: 2900, difficulty: "easy", date: new Date().toLocaleDateString() },
-        { id: 5, name: "PRIYA", score: 2700, difficulty: "easy", date: new Date().toLocaleDateString() }
-      ];
-      localStorage.setItem('tech_memory_hunt_leaderboard', JSON.stringify(defaultBoard));
-      return defaultBoard;
-    }
-    return JSON.parse(board);
-  } catch (e) {
-    return [];
   }
 }
 
-function qualifiesForLeaderboard(score) {
-  if (score <= 0) return false;
-  const board = getLeaderboard();
-  if (board.length < 5) return true;
-  // Qualifies if higher than the lowest score in top 5
-  return score > board[board.length - 1].score;
-}
-
-function submitLeaderboardScore() {
-  let name = playerNameInput.value.trim().toUpperCase();
-  if (!name) {
-    name = "PLAYER";
-  }
+// Return to Start Screen
+function resetToHome() {
+  clearAllTimers();
+  stopConfetti();
+  gameState = 'HOME';
   
-  // Cap name length at 10 chars
-  if (name.length > 10) {
-    name = name.substring(0, 10);
-  }
+  // Hide top-right mute button on home screen
+  if (btnMute) btnMute.classList.add('hidden');
+  if (roundControls) roundControls.classList.add('hidden');
   
-  const board = getLeaderboard();
-  const timestampId = Date.now(); // unique ID to highlight row
-  lastInsertedId = timestampId;
+  // Remove temporary target header elements
+  const targetHeader = document.getElementById('guess-title-target');
+  if (targetHeader) targetHeader.remove();
   
-  const entry = {
-    id: timestampId,
-    name: name,
-    score: score,
-    difficulty: chosenDifficulty,
-    date: new Date().toLocaleDateString()
-  };
-  
-  board.push(entry);
-  // Sort descending by score
-  board.sort((a, b) => b.score - a.score);
-  // Keep top 5
-  const topFive = board.slice(0, 5);
-  
-  localStorage.setItem('tech_memory_hunt_leaderboard', JSON.stringify(topFive));
-  
-  // Hide input panel, update leaderboards
-  leaderboardInputContainer.classList.add('hidden');
-  renderLeaderboards();
-  playSound('complete');
-}
-
-// Render Top 5 Leaderboard Tables on Home and Results Screen
-function renderLeaderboards() {
-  const board = getLeaderboard();
-  
-  // Render helper
-  const generateRowsHtml = (entries) => {
-    if (entries.length === 0) {
-      return `<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No scores recorded yet</td></tr>`;
-    }
-    return entries.map((entry, idx) => {
-      const isNew = (entry.id === lastInsertedId);
-      return `
-        <tr class="${isNew ? 'highlight-row' : ''}">
-          <td class="rank-col">${idx + 1}</td>
-          <td>${entry.name}</td>
-          <td><strong>${entry.score}</strong></td>
-          <td><span class="diff-tag ${entry.difficulty}">${entry.difficulty}</span></td>
-        </tr>
-      `;
-    }).join('');
-  };
-  
-  const rowsHtml = generateRowsHtml(board);
-  if (homeLeaderboardBody) homeLeaderboardBody.innerHTML = rowsHtml;
-  if (resultsLeaderboardBody) resultsLeaderboardBody.innerHTML = rowsHtml;
+  resultsScreen.classList.add('hidden');
+  gameScreen.classList.add('hidden');
+  homeScreen.classList.remove('hidden');
 }
 
 // Safe Reset and clear all timers
@@ -826,21 +1013,37 @@ function clearAllTimers() {
   isInteractionLocked = false;
 }
 
-// Return to Start Screen
-function resetToHome() {
-  clearAllTimers();
-  gameState = 'HOME';
+// Populate and render active players list dynamically inside modal
+function renderPlayerRegistryList() {
+  const activePlayersList = document.getElementById('active-players-list');
+  if (!activePlayersList) return;
+  activePlayersList.innerHTML = '';
   
-  // Remove temporary target header elements
-  const targetHeader = document.getElementById('guess-title-target');
-  if (targetHeader) targetHeader.remove();
-  
-  resultsScreen.classList.add('hidden');
-  gameScreen.classList.add('hidden');
-  homeScreen.classList.remove('hidden');
-  
-  loadHomeScreenPreviews();
-  renderLeaderboards();
+  playerRegistry.forEach(player => {
+    const item = document.createElement('div');
+    item.className = `player-list-item ${player.name === playerName ? 'active' : ''}`;
+    
+    item.innerHTML = `
+      <span class="player-name">${player.name}</span>
+      <span class="player-best">BEST: ${player.best}</span>
+    `;
+    
+    item.addEventListener('click', () => {
+      playSound('click');
+      playerName = player.name;
+      bestScore = player.best;
+      
+      const nameInput = document.getElementById('player-name-input');
+      if (nameInput) nameInput.value = playerName;
+      if (homeBestScore) homeBestScore.textContent = bestScore;
+      if (gameBest) gameBest.textContent = bestScore;
+      
+      // Close registry modal
+      document.getElementById('registry-modal').classList.add('hidden');
+    });
+    
+    activePlayersList.appendChild(item);
+  });
 }
 
 // Register initializer on window load

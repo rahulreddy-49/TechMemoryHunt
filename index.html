@@ -28,6 +28,9 @@
       </svg>
     </button>
 
+    <!-- Confetti Canvas for High Score Celebration -->
+    <canvas id="confetti-canvas" class="confetti-canvas"></canvas>
+
     <!-- background grids & glow effects -->
     <div class="bg-glow bg-glow-1"></div>
     <div class="bg-glow bg-glow-2"></div>
@@ -35,92 +38,72 @@
 
     <!-- HOME SCREEN -->
     <section id="home-screen" class="screen active">
-        <div class="ieee-logo-wrapper">
-          <div class="ieee-accent-decor">
-            <span class="decor-line"></span>
-            <span class="ieee-tag">IEEE COMPUTER SOCIETY</span>
-            <span class="decor-line"></span>
+
+        <!-- Glassmorphism Main Panel -->
+        <div class="home-panel-container">
+          <div class="ieee-logo-wrapper" style="margin-top: 10px;">
+            <div class="ieee-accent-decor">
+              <span class="decor-line"></span>
+              <span class="ieee-tag">IEEE COMPUTER SOCIETY</span>
+              <span class="decor-line"></span>
+            </div>
+          </div>
+
+          <!-- Title and Subtitle -->
+          <div class="game-logo-container">
+            <h1 class="logo-title">MEMORY<span class="logo-accent">HUNT</span></h1>
+            <p class="logo-subtitle">How long can you memorize?</p>
+          </div>
+
+          <!-- Active Player / Pilot Input Card -->
+          <div class="pilot-input-card">
+            <div class="pilot-input-inner">
+              <span class="pilot-input-label">ACTIVE PLAYER</span>
+              <input type="text" id="player-name-input" class="pilot-input-field" maxlength="10" placeholder="YOUR NAME" autocomplete="off" value="PLAYER" />
+            </div>
+            <div class="pilot-input-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Stats Card Row -->
+          <div class="pilot-stats-row">
+            <div class="pilot-stat-card">
+              <span class="stat-label">HUNT BEST</span>
+              <span id="home-best-score" class="stat-value text-glow-cyan">0</span>
+            </div>
+            <div class="pilot-stat-card">
+              <span class="stat-label">ROUNDS</span>
+              <span class="stat-value text-glow-cyan">5</span>
+            </div>
+          </div>
+
+          <!-- Play & Settings Action Row -->
+          <div class="pilot-actions-row">
+            <button id="btn-play" class="btn-play-pill">
+              <span>PLAY</span>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+            </button>
+            
+            <button id="btn-mute-home" class="btn-mute-home-icon" title="Toggle Mute">
+              <svg id="mute-icon-home-unmuted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+              </svg>
+              <svg id="mute-icon-home-muted" class="hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.21.05-.42.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Bottom Hints -->
+          <div class="pilot-guides">
+            <span class="guide-badge">ENTER</span> or <span class="guide-action">CLICK / TAP</span> to Start
           </div>
         </div>
-        <h1 class="game-title" id="main-title">TECH MEMORY HUNT</h1>
-        <p class="game-subtitle">"How good is your tech memory?"</p>
-      </div>
-
-      <!-- Preview Row -->
-      <div id="home-card-preview" class="home-card-preview">
-        <!-- Dynamically populated cards will be placed here -->
-      </div>
-
-      <div class="card-panel stats-panel-home">
-        <div class="best-score-badge">
-          <span class="label">BEST SCORE</span>
-          <span class="value" id="home-best-score">0</span>
-        </div>
-      </div>
-
-      <!-- Difficulty Selection -->
-      <div class="card-panel difficulty-panel">
-        <h2>SELECT DIFFICULTY</h2>
-        <div class="difficulty-options">
-          <button type="button" class="btn-difficulty" data-diff="easy">
-            <span class="diff-title">EASY</span>
-            <span class="diff-desc">5s Memo / 10s Guess</span>
-          </button>
-          <button type="button" class="btn-difficulty active" data-diff="normal">
-            <span class="diff-title">NORMAL</span>
-            <span class="diff-desc">4s Memo / 8s Guess</span>
-          </button>
-          <button type="button" class="btn-difficulty" data-diff="hard">
-            <span class="diff-title">HARD</span>
-            <span class="diff-desc">3s Memo / 6s Guess</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="card-panel instructions-panel">
-        <h2>HOW TO PLAY</h2>
-        <ul>
-          <li>
-            <span class="step-num">1</span>
-            <span class="step-text">Memorize the images.</span>
-          </li>
-          <li>
-            <span class="step-num">2</span>
-            <span class="step-text">Remember their positions.</span>
-          </li>
-          <li>
-            <span class="step-num">3</span>
-            <span class="step-text">Find the requested technology.</span>
-          </li>
-        </ul>
-      </div>
-
-      <!-- Leaderboard Panel on Home Screen -->
-      <div class="card-panel leaderboard-panel" id="home-leaderboard-container">
-        <h2>🏆 TOP SCORES</h2>
-        <div class="leaderboard-table-container">
-          <table class="leaderboard-table">
-            <thead>
-              <tr>
-                <th>Rank</th>
-                <th>Player</th>
-                <th>Score</th>
-                <th>Diff</th>
-              </tr>
-            </thead>
-            <tbody id="home-leaderboard-body">
-              <!-- Dynamically populated top 5 scores -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <button id="btn-play" class="btn btn-primary btn-glow">
-        <span>PLAY GAME</span>
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polygon points="5 3 19 12 5 21 5 3"></polygon>
-        </svg>
-      </button>
     </section>
 
     <!-- GAME SCREEN -->
@@ -128,7 +111,7 @@
       <!-- Top Status Bar -->
       <header class="game-header">
         <div class="round-tracker">
-          <span id="current-round-text" class="text-glow">ROUND 1 / 20</span>
+          <span id="current-round-text" class="text-glow">ROUND 1 / 5</span>
           <span id="category-tag" class="category-pill">Computer Basics</span>
         </div>
         <div class="score-board">
@@ -151,6 +134,12 @@
       <div class="instruction-banner">
         <div id="instruction-title" class="instruction-title">MEMORIZE THE PLACES</div>
         <div id="instruction-prompt" class="instruction-prompt text-glow">5</div>
+        
+        <!-- Round start/shuffle controls -->
+        <div id="round-controls" class="round-controls-banner hidden" style="margin-top: 8px; display: flex; gap: 12px; z-index: 10;">
+          <button id="btn-shuffle-round" class="btn btn-secondary btn-small" style="padding: 6px 14px; font-size: 0.85rem; width: auto; min-width: 90px; height: 32px; border-radius: 8px; margin-top: 0;">SHUFFLE</button>
+          <button id="btn-start-round" class="btn btn-primary btn-glow btn-small" style="padding: 6px 14px; font-size: 0.85rem; width: auto; min-width: 90px; height: 32px; border-radius: 8px; margin-top: 0;">START</button>
+        </div>
         
         <!-- Guess Timer Indicator -->
         <div id="guess-timer-container" class="guess-timer-container hidden">
@@ -190,13 +179,15 @@
     <!-- RESULTS SCREEN -->
     <section id="results-screen" class="screen hidden">
       <div class="hero-container">
-        <div id="high-score-banner" class="high-score-banner hidden">NEW HIGH SCORE!</div>
         <h1 class="results-title">GAME COMPLETE!</h1>
-        <p class="results-subtitle">ORIENTATION STALL REPORT</p>
+        <p class="results-subtitle">FINAL REPORT</p>
       </div>
 
       <div class="results-summary">
+        <!-- Player Name and Score Card -->
         <div class="result-card score-result">
+          <span class="label">PLAYER</span>
+          <span id="result-player-name" class="value text-glow" style="font-size: 2.2rem; display: block; margin-bottom: 8px;">PLAYER</span>
           <span class="label">TOTAL SCORE</span>
           <span id="result-score" class="value text-glow">0</span>
         </div>
@@ -208,47 +199,21 @@
           </div>
           <div class="result-card">
             <span class="label">CORRECT</span>
-            <span id="result-correct" class="value-small text-glow">0 / 20</span>
-          </div>
-          <div class="result-card">
-            <span class="label">BEST STREAK</span>
-            <span id="result-streak" class="value-small text-glow">0</span>
-          </div>
-          <div class="result-card result-best-score-box">
-            <span class="label">BEST SCORE</span>
-            <span id="result-best" class="value-small">0</span>
+            <span id="result-correct" class="value-small text-glow">0 / 5</span>
           </div>
         </div>
       </div>
 
-      <!-- Leaderboard Name Input (Only shown if qualifies for top 5) -->
-      <div id="leaderboard-input-container" class="card-panel input-panel hidden">
-        <h2>🏆 NEW TOP SCORE!</h2>
-        <p>Enter your name for the local leaderboard:</p>
-        <div class="input-row">
-          <input type="text" id="player-name-input" maxlength="10" placeholder="YOUR NAME" autocomplete="off" />
-          <button id="btn-submit-score" class="btn btn-primary btn-small">SUBMIT</button>
-        </div>
-      </div>
-
-      <!-- Leaderboard Table -->
-      <div class="card-panel leaderboard-panel" id="results-leaderboard-container">
-        <h2>🏆 LEADERBOARD</h2>
-        <div class="leaderboard-table-container">
-          <table class="leaderboard-table">
-            <thead>
-              <tr>
-                <th>Rank</th>
-                <th>Player</th>
-                <th>Score</th>
-                <th>Diff</th>
-              </tr>
-            </thead>
-            <tbody id="results-leaderboard-body">
-              <!-- Dynamically populated top 5 scores -->
-            </tbody>
-          </table>
-        </div>
+      <!-- Hidden nodes to prevent js errors -->
+      <div style="display: none;">
+        <span id="result-streak">0</span>
+        <span id="result-best">0</span>
+        <div id="high-score-banner"></div>
+        <div id="leaderboard-input-container"></div>
+        <div id="results-leaderboard-container"></div>
+        <tbody id="results-leaderboard-body"></tbody>
+        <tbody id="home-leaderboard-body"></tbody>
+        <button id="btn-submit-score"></button>
       </div>
 
       <!-- Play buttons -->
@@ -271,6 +236,34 @@
         <span class="round-intro-badge">GET READY</span>
         <h1 id="intro-round-title" class="text-glow">ROUND 1</h1>
         <p id="intro-category-title">COMPUTER BASICS</p>
+      </div>
+    </div>
+
+    <!-- PLAYER REGISTRY MODAL -->
+    <div id="registry-modal" class="modal-overlay hidden">
+      <div class="registry-panel">
+        <h2 class="registry-title">PLAYER REGISTRY</h2>
+        
+        <!-- Register Input Card -->
+        <div class="pilot-input-card" style="margin-top: 16px; margin-bottom: 12px; width: 100%;">
+          <div class="pilot-input-inner">
+            <span class="pilot-input-label">NEW PLAYER NAME</span>
+            <input type="text" id="registry-name-input" class="pilot-input-field" maxlength="10" placeholder="ENTER NAME" autocomplete="off" />
+          </div>
+        </div>
+        
+        <button id="btn-register-player" class="btn-play-pill" style="margin-bottom: 20px; font-size: 0.9rem; padding: 10px 20px; width: 100%;">
+          REGISTER
+        </button>
+
+        <span class="pilot-input-label" style="align-self: flex-start; margin-bottom: 8px;">ACTIVE PLAYERS</span>
+        <div id="active-players-list" class="active-players-list">
+          <!-- Populated dynamically via JS -->
+        </div>
+
+        <div class="registry-modal-actions" style="margin-top: 20px; display: flex; gap: 12px; width: 100%;">
+          <button id="btn-close-registry" class="btn-close-modal">CLOSE</button>
+        </div>
       </div>
     </div>
   </div>
