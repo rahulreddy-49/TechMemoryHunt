@@ -24,6 +24,8 @@ let shuffledItems = [];
 let targetItem = null;
 let targetPosition = -1;
 let gameState = 'HOME'; // HOME, INTRO, MEMORIZE, GUESS, FEEDBACK, RESULTS
+let timerMemorize = 5;  // Manual timer settings
+let timerGuess = 10;
 let countdownValue = 5;
 let guessCountdownValue = 10;
 
@@ -114,6 +116,16 @@ function init() {
   isMuted = localStorage.getItem('tech_memory_hunt_muted') === 'true';
   updateMuteIcon();
 
+  // Load manual timer settings
+  timerMemorize = parseInt(localStorage.getItem('memory_hunt_timer_memorize') || '5', 10);
+  timerGuess = parseInt(localStorage.getItem('memory_hunt_timer_guess') || '10', 10);
+  
+  // Set settings inputs values
+  const settingsMemInput = document.getElementById('settings-memorize-time');
+  const settingsGuessInput = document.getElementById('settings-guess-time');
+  if (settingsMemInput) settingsMemInput.value = timerMemorize;
+  if (settingsGuessInput) settingsGuessInput.value = timerGuess;
+
   // Hide global mute icon on home screen
   if (btnMute) btnMute.classList.add('hidden');
 
@@ -171,6 +183,56 @@ function init() {
   const btnMuteHome = document.getElementById('btn-mute-home');
   if (btnMuteHome) {
     btnMuteHome.addEventListener('click', toggleMute);
+  }
+
+  // SETTINGS MODAL CONTROLLERS & BINDINGS
+  const settingsModal = document.getElementById('settings-modal');
+  const btnSettingsHome = document.getElementById('btn-settings-home');
+  const btnCloseSettings = document.getElementById('btn-close-settings');
+  const settingsMemorizeTime = document.getElementById('settings-memorize-time');
+  const settingsGuessTime = document.getElementById('settings-guess-time');
+
+  // Open settings modal
+  if (btnSettingsHome && settingsModal) {
+    btnSettingsHome.addEventListener('click', () => {
+      playSound('click');
+      if (settingsMemorizeTime) settingsMemorizeTime.value = timerMemorize;
+      if (settingsGuessTime) settingsGuessTime.value = timerGuess;
+      settingsModal.classList.remove('hidden');
+    });
+  }
+
+  // Close & Save settings modal
+  if (btnCloseSettings && settingsModal) {
+    btnCloseSettings.addEventListener('click', () => {
+      playSound('click');
+      let memVal = parseInt(settingsMemorizeTime.value, 10);
+      let guessVal = parseInt(settingsGuessTime.value, 10);
+      
+      // Validation: clamp between 1 and 60 seconds
+      if (isNaN(memVal) || memVal < 1) memVal = 5;
+      if (memVal > 60) memVal = 60;
+      if (isNaN(guessVal) || guessVal < 1) guessVal = 10;
+      if (guessVal > 60) guessVal = 60;
+
+      timerMemorize = memVal;
+      timerGuess = guessVal;
+      
+      localStorage.setItem('memory_hunt_timer_memorize', timerMemorize);
+      localStorage.setItem('memory_hunt_timer_guess', timerGuess);
+
+      settingsModal.classList.add('hidden');
+    });
+  }
+
+  // Close settings on click outside
+  if (settingsModal) {
+    settingsModal.addEventListener('click', (e) => {
+      if (e.target === settingsModal) {
+        playSound('click');
+        if (btnCloseSettings) btnCloseSettings.click();
+      }
+    });
   }
 
   // PLAYER REGISTRY MODAL CONTROLLERS & BINDINGS
@@ -648,7 +710,7 @@ function renderGrid() {
 
 // Memorization Countdown with Progress Bar matching Difficulty settings
 function startMemorizeCountdown() {
-  countdownValue = 5; // Always 5 seconds memorization
+  countdownValue = timerMemorize; // Study timer setting
   
   instructionTitle.textContent = 'MEMORIZE THE PLACES';
   instructionPrompt.textContent = countdownValue;
@@ -663,8 +725,8 @@ function startMemorizeCountdown() {
   // Force browser reflow to load styles
   void memorizeProgressBar.offsetWidth;
   
-  // Transition smoothly to 0% over 5 seconds
-  memorizeProgressBar.style.transition = `width 5s linear`;
+  // Transition smoothly to 0% over X seconds
+  memorizeProgressBar.style.transition = `width ${timerMemorize}s linear`;
   memorizeProgressBar.style.width = '0%';
   
   triggerTickAnimation();
@@ -711,7 +773,7 @@ function transitionToGuessPhase() {
   guessTimerContainer.classList.remove('hidden');
   
   instructionTitle.textContent = 'WHERE IS';
-  guessTimerVal.textContent = 10; // 10 seconds to guess
+  guessTimerVal.textContent = timerGuess; // Study timer setting
   
   // Set question target (capitalize properly for visual appeal)
   const displayName = targetItem.toUpperCase();
@@ -731,7 +793,7 @@ function transitionToGuessPhase() {
 
 // Guess Countdown Interval Loop with Visual Urgency Indicators
 function startGuessCountdown() {
-  guessCountdownValue = 10; // 10 seconds to guess
+  guessCountdownValue = timerGuess; // Guess timer setting
   
   // Setup Guess Progress Bar width
   memorizeProgressBar.classList.add('hidden');
@@ -745,8 +807,8 @@ function startGuessCountdown() {
   
   void guessProgressBar.offsetWidth;
   
-  // Sync width to 0% over 10 seconds
-  guessProgressBar.style.transition = `width 10s linear`;
+  // Sync width to 0% over X seconds
+  guessProgressBar.style.transition = `width ${timerGuess}s linear`;
   guessProgressBar.style.width = '0%';
   
   if (guessInterval) clearInterval(guessInterval);
